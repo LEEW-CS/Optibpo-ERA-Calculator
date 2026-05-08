@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERA 2025 Cost Calculator — optiBPO</title>
+<meta name="description" content="UK SME calculator for Employment Rights Act 2025 compliance cost, IR35 risk, and offshore equivalent saving.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Page chrome only — for the standalone preview. The widget itself is .era-calc. */
+  html,body{margin:0;padding:0;background:#f7f7f7;font-family:'Open Sans',Helvetica,Arial,sans-serif;color:#444}
+  .preview-wrap{max-width:880px;margin:40px auto;padding:0 20px}
+  .preview-note{font-size:12px;color:#888;text-align:center;margin:24px 0 8px}
+  .preview-note code{background:#eee;padding:2px 6px;border-radius:3px;font-size:11px}
+
+  /* =============================================================
+     ERA CALCULATOR WIDGET — everything below is scoped to .era-calc
+     so it can be dropped onto optibpo.com without leaking styles.
+     ============================================================= */
+  .era-calc,.era-calc *,.era-calc *::before,.era-calc *::after{box-sizing:border-box}
+  .era-calc{
+    --era-primary:#30abdf;
+    --era-primary-dark:#1089bd;
+    --era-accent:#88bbc8;
+    --era-tint:#def4ff;
+    --era-text:#444;
+    --era-heading:#222;
+    --era-muted:#777;
+    --era-border:#e1e1e1;
+    --era-bg-soft:#f7f7f7;
+    --era-error:#dc3232;
+    --era-success:#2fa84f;
+    --era-warn:#e08e00;
+
+    font-family:'Open Sans',Helvetica,Arial,sans-serif;
+    color:var(--era-text);
+    line-height:1.55;
+    background:#fff;
+    border:1px solid var(--era-border);
+    box-shadow:0 0 2em rgba(0,0,0,0.06);
+    max-width:880px;
+    margin:0 auto;
+    padding:0;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .era-calc__header{
+    padding:28px 32px 20px;
+    border-bottom:1px solid var(--era-border);
+    background:#fff;
+  }
+  .era-calc__eyebrow{
+    font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--era-primary);font-weight:600;margin:0 0 6px;
+  }
+  .era-calc__title{
+    margin:0;font-size:26px;line-height:1.2;color:var(--era-heading);font-weight:600;
+  }
+  .era-calc__sub{
+    margin:6px 0 0;font-size:14px;color:var(--era-muted);
+  }
+
+  .era-calc__steps{
+    display:flex;gap:0;padding:14px 32px;background:var(--era-bg-soft);
+    border-bottom:1px solid var(--era-border);font-size:12px;
+  }
+  .era-calc__step{
+    flex:1;display:flex;align-items:center;gap:8px;color:var(--era-muted);
+  }
+  .era-calc__step .dot{
+    display:inline-block;width:22px;height:22px;border-radius:50%;
+    background:#fff;border:1px solid var(--era-border);
+    text-align:center;line-height:20px;font-weight:600;font-size:11px;
+  }
+  .era-calc__step.is-active{color:var(--era-heading);font-weight:600}
+  .era-calc__step.is-active .dot{background:var(--era-primary);color:#fff;border-color:var(--era-primary)}
+  .era-calc__step.is-done .dot{background:var(--era-success);color:#fff;border-color:var(--era-success)}
+
+  .era-calc__body{padding:28px 32px}
+  .era-calc__panel{display:none}
+  .era-calc__panel.is-active{display:block;animation:eraFade .25s ease-out}
+  @keyframes eraFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .era-calc__field{margin-bottom:22px}
+  .era-calc__label{
+    display:block;font-size:13px;font-weight:600;color:var(--era-heading);
+    margin-bottom:8px;
+  }
+  .era-calc__hint{font-size:12px;color:var(--era-muted);margin:0 0 8px}
+
+  .era-calc__slider-row{display:flex;align-items:center;gap:16px}
+  .era-calc__slider-row input[type=range]{flex:1}
+  .era-calc__slider-value{
+    min-width:64px;text-align:center;font-weight:600;color:var(--era-heading);
+    background:var(--era-tint);border:1px solid var(--era-primary);
+    padding:6px 10px;border-radius:3px;font-size:14px;
+  }
+  .era-calc input[type=range]{
+    -webkit-appearance:none;appearance:none;height:4px;background:var(--era-border);
+    border-radius:2px;outline:none;
+  }
+  .era-calc input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:18px;height:18px;
+    background:var(--era-primary);border-radius:50%;cursor:pointer;
+    border:2px solid #fff;box-shadow:0 0 0 1px var(--era-primary);
+  }
+  .era-calc input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;background:var(--era-primary);border-radius:50%;
+    cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--era-primary);
+  }
+
+  .era-calc select,.era-calc input[type=text],.era-calc input[type=email],
+  .era-calc input[type=tel]{
+    width:100%;padding:9px 10px;border:1px solid var(--era-border);
+    background:#fff;color:#555;border-radius:0;font-family:inherit;font-size:14px;
+    -webkit-appearance:none;appearance:none;
+  }
+  .era-calc select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='%23777' d='M6 8L0 0h12z'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;
+    padding-right:32px;
+  }
+  .era-calc select:focus,.era-calc input:focus{
+    outline:none;box-shadow:0 0 2px 0 rgba(0,0,0,0.2);color:var(--era-heading);
+    border-color:var(--era-primary);
+  }
+
+  .era-calc__roles{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;
+  }
+  @media (max-width:560px){.era-calc__roles{grid-template-columns:1fr}}
+  .era-calc__role{
+    display:flex;align-items:flex-start;gap:8px;padding:10px;
+    border:1px solid var(--era-border);background:#fff;cursor:pointer;
+    transition:all .15s ease;
+  }
+  .era-calc__role:hover{border-color:var(--era-primary);background:var(--era-tint)}
+  .era-calc__role input{margin:3px 0 0 0;accent-color:var(--era-primary)}
+  .era-calc__role-label{font-size:13px;color:var(--era-heading);font-weight:600}
+  .era-calc__role-desc{font-size:11px;color:var(--era-muted);margin-top:2px}
+  .era-calc__role.is-checked{border-color:var(--era-primary);background:var(--era-tint)}
+
+  .era-calc__actions{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    margin-top:8px;
+  }
+  .era-calc__btn{
+    display:inline-block;padding:10px 22px;font-size:12px;font-weight:600;
+    text-transform:uppercase;letter-spacing:0.5px;border-radius:3px;
+    cursor:pointer;border:1px solid;text-align:center;font-family:inherit;
+    transition:all .25s ease-in-out;
+  }
+  .era-calc__btn--primary{
+    background:var(--era-primary);color:#fff;border-color:var(--era-primary);
+  }
+  .era-calc__btn--primary:hover{background:var(--era-primary-dark);border-color:var(--era-primary-dark)}
+  .era-calc__btn--ghost{
+    background:#f8f8f8;color:var(--era-muted);border-color:var(--era-border);
+  }
+  .era-calc__btn--ghost:hover{background:#fff;color:var(--era-heading)}
+  .era-calc__btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Lead gate */
+  .era-calc__gate-card{
+    background:linear-gradient(180deg,var(--era-tint) 0%,#fff 100%);
+    border:1px solid var(--era-primary);padding:28px;text-align:center;
+  }
+  .era-calc__gate-title{font-size:20px;color:var(--era-heading);margin:0 0 8px;font-weight:600}
+  .era-calc__gate-sub{font-size:14px;color:var(--era-muted);margin:0 0 22px}
+  .era-calc__teaser{
+    display:flex;justify-content:center;gap:24px;flex-wrap:wrap;
+    margin:0 0 24px;padding:18px;background:#fff;border:1px solid var(--era-border);
+  }
+  .era-calc__teaser-item{text-align:center}
+  .era-calc__teaser-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--era-muted);margin:0 0 4px}
+  .era-calc__teaser-value{font-size:22px;font-weight:600;color:var(--era-primary);margin:0;filter:blur(6px)}
+  .era-calc__teaser-value.is-shown{filter:none}
+
+  .era-calc__form{text-align:left;max-width:480px;margin:0 auto}
+  .era-calc__form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:560px){.era-calc__form-row{grid-template-columns:1fr}}
+  .era-calc__form-row + .era-calc__form-row{margin-top:0}
+  .era-calc__form .era-calc__field{margin-bottom:14px}
+
+  .era-calc__hubspot-slot{
+    /* HubSpot's embedded form drops its own markup here when configured. */
+    min-height:20px;
+  }
+  .era-calc__hubspot-slot:not(:empty) + .era-calc__form{display:none}
+
+  .era-calc__privacy{font-size:11px;color:var(--era-muted);margin-top:14px;text-align:center}
+  .era-calc__privacy a{color:var(--era-primary);text-decoration:none}
+
+  /* Results */
+  .era-calc__results-grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:22px;
+  }
+  @media (max-width:560px){.era-calc__results-grid{grid-template-columns:1fr}}
+  .era-calc__metric{
+    border:1px solid var(--era-border);padding:18px;background:#fff;
+  }
+  .era-calc__metric--hero{
+    grid-column:1 / -1;background:var(--era-primary);color:#fff;border-color:var(--era-primary);
+  }
+  .era-calc__metric-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:1px;
+    color:var(--era-muted);margin:0 0 6px;
+  }
+  .era-calc__metric--hero .era-calc__metric-label{color:rgba(255,255,255,.85)}
+  .era-calc__metric-value{
+    font-size:30px;font-weight:600;color:var(--era-heading);margin:0;line-height:1.1;
+  }
+  .era-calc__metric--hero .era-calc__metric-value{color:#fff;font-size:38px}
+  .era-calc__metric-foot{font-size:12px;color:var(--era-muted);margin:6px 0 0}
+  .era-calc__metric--hero .era-calc__metric-foot{color:rgba(255,255,255,.85)}
+
+  .era-calc__risk-badge{
+    display:inline-block;padding:4px 10px;font-size:11px;font-weight:600;
+    text-transform:uppercase;letter-spacing:1px;border-radius:3px;
+  }
+  .era-calc__risk-badge--low{background:#e6f7ec;color:var(--era-success)}
+  .era-calc__risk-badge--med{background:#fff4e0;color:var(--era-warn)}
+  .era-calc__risk-badge--high{background:#fde8e8;color:var(--era-error)}
+
+  .era-calc__breakdown{
+    background:var(--era-bg-soft);border:1px solid var(--era-border);
+    padding:18px;margin-bottom:22px;font-size:13px;
+  }
+  .era-calc__breakdown h4{margin:0 0 10px;font-size:13px;color:var(--era-heading);font-weight:600}
+  .era-calc__breakdown-row{
+    display:flex;justify-content:space-between;padding:6px 0;
+    border-bottom:1px dotted var(--era-border);
+  }
+  .era-calc__breakdown-row:last-child{border-bottom:0;font-weight:600;color:var(--era-heading)}
+
+  .era-calc__cta-card{
+    background:var(--era-heading);color:#fff;padding:28px;text-align:center;
+  }
+  .era-calc__cta-title{margin:0 0 6px;font-size:20px;color:#fff;font-weight:600}
+  .era-calc__cta-sub{margin:0 0 18px;font-size:14px;color:rgba(255,255,255,.85)}
+  .era-calc__cta-card .era-calc__btn--primary{
+    background:var(--era-primary);border-color:var(--era-primary);
+  }
+  .era-calc__cta-card .era-calc__btn--primary:hover{background:var(--era-primary-dark);border-color:var(--era-primary-dark)}
+
+  .era-calc__footnote{font-size:11px;color:var(--era-muted);margin-top:18px;line-height:1.5}
+  .era-calc__footnote a{color:var(--era-primary);text-decoration:none}
+
+  .era-calc__error{
+    color:var(--era-error);font-size:12px;margin-top:6px;display:none;
+  }
+  .era-calc__error.is-shown{display:block}
+
+  /* Mobile header tweak */
+  @media (max-width:560px){
+    .era-calc__header{padding:20px}
+    .era-calc__body{padding:20px}
+    .era-calc__steps{padding:10px 20px;gap:8px}
+    .era-calc__step span:not(.dot){display:none}
+    .era-calc__title{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-wrap">
+  <p class="preview-note">Standalone preview. To embed on optibpo.com, copy the <code>&lt;div class="era-calc"&gt;...&lt;/div&gt;</code> block plus the &lt;style&gt; block above (or the bundled JS/CSS).</p>
+
+  <!-- ============================================================
+       EMBEDDABLE WIDGET STARTS HERE
+       Drop this <div> + the matching <style> + the <script> block
+       at the bottom of the page anywhere on optibpo.com.
+       ============================================================ -->
+  <div class="era-calc" id="era-calc-root" data-version="1.0.1">
+
+    <header class="era-calc__header">
+      <p class="era-calc__eyebrow">ERA 2025 Exposure Calculator</p>
+      <h2 class="era-calc__title">What will the Employment Rights Act 2025 cost your business?</h2>
+      <p class="era-calc__sub">Free. 60 seconds. UK SME owners only. Get your annual compliance cost, IR35 risk score, and offshore-equivalent comparison.</p>
+    </header>
+
+    <div class="era-calc__steps" role="tablist">
+      <div class="era-calc__step is-active" data-step="1"><span class="dot">1</span><span>Your business</span></div>
+      <div class="era-calc__step" data-step="2"><span class="dot">2</span><span>Your details</span></div>
+      <div class="era-calc__step" data-step="3"><span class="dot">3</span><span>Your results</span></div>
+    </div>
+
+    <div class="era-calc__body">
+
+      <!-- ===== STEP 1: INPUTS ===== -->
+      <section class="era-calc__panel is-active" data-panel="1">
+
+        <div class="era-calc__field">
+          <label class="era-calc__label" for="era-employees">Number of UK employees</label>
+          <p class="era-calc__hint">Includes full-time, part-time, and zero-hours workers on payroll.</p>
+          <div class="era-calc__slider-row">
+            <input type="range" id="era-employees" min="1" max="250" value="15" step="1">
+            <span class="era-calc__slider-value" id="era-employees-value">15</span>
+          </div>
+        </div>
+
+        <div class="era-calc__field">
+          <label class="era-calc__label" for="era-salary">Average UK salary band</label>
+          <p class="era-calc__hint">Pick the band closest to your average gross full-time salary.</p>
+          <select id="era-salary">
+            <option value="20000">Under £25,000</option>
+            <option value="30000">£25,000 – £35,000</option>
+            <option value="42000" selected>£35,000 – £50,000 (UK median: £39k)</option>
+            <option value="60000">£50,000 – £75,000</option>
+            <option value="90000">£75,000+</option>
+          </select>
+        </div>
+
+        <div class="era-calc__field">
+          <label class="era-calc__label" for="era-industry">Industry</label>
+          <select id="era-industry">
+            <option value="professional_services" selected>Professional services / consulting</option>
+            <option value="tech">Technology / SaaS</option>
+            <option value="hospitality">Hospitality / food &amp; beverage</option>
+            <option value="adult_social_care">Adult social care</option>
+            <option value="retail">Retail / e-commerce</option>
+            <option value="construction">Construction / trades</option>
+            <option value="manufacturing_logistics">Manufacturing / logistics</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="era-calc__field">
+          <label class="era-calc__label">Role types in your workforce <span style="color:var(--era-muted);font-weight:400;font-size:12px">(tick all that apply)</span></label>
+          <p class="era-calc__hint">Used to calculate your IR35 exposure score.</p>
+          <div class="era-calc__roles" id="era-roles">
+            <label class="era-calc__role"><input type="checkbox" value="permanent_ft" checked><span><span class="era-calc__role-label">Permanent full-time</span><span class="era-calc__role-desc">Salaried PAYE employees</span></span></label>
+            <label class="era-calc__role"><input type="checkbox" value="part_time"><span><span class="era-calc__role-label">Part-time</span><span class="era-calc__role-desc">Reduced-hours PAYE</span></span></label>
+            <label class="era-calc__role"><input type="checkbox" value="zero_hours"><span><span class="era-calc__role-label">Zero-hours / flexible</span><span class="era-calc__role-desc">Variable-hours workers</span></span></label>
+            <label class="era-calc__role"><input type="checkbox" value="fixed_term"><span><span class="era-calc__role-label">Fixed-term</span><span class="era-calc__role-desc">Project / time-limited</span></span></label>
+            <label class="era-calc__role"><input type="checkbox" value="contractor_single"><span><span class="era-calc__role-label">Self-employed (single client)</span><span class="era-calc__role-desc">Long-term, you're their main client</span></span></label>
+            <label class="era-calc__role"><input type="checkbox" value="contractor_multi"><span><span class="era-calc__role-label">Self-employed (multi-client)</span><span class="era-calc__role-desc">Genuine consultants</span></span></label>
+            <label class="era-calc__role"><input type="checkbox" value="agency"><span><span class="era-calc__role-label">Agency / temp</span><span class="era-calc__role-desc">Supplied via third party</span></span></label>
+          </div>
+          <p class="era-calc__error" id="era-roles-error">Please select at least one role type.</p>
+        </div>
+
+        <div class="era-calc__actions">
+          <span></span>
+          <button class="era-calc__btn era-calc__btn--primary" id="era-to-gate">Calculate my exposure →</button>
+        </div>
+      </section>
+
+      <!-- ===== STEP 2: LEAD GATE ===== -->
+      <section class="era-calc__panel" data-panel="2">
+        <div class="era-calc__gate-card">
+          <h3 class="era-calc__gate-title">Your numbers are ready.</h3>
+          <p class="era-calc__gate-sub">Enter your details to unlock your full breakdown — including your offshore-equivalent saving.</p>
+
+          <div class="era-calc__teaser" id="era-teaser">
+            <div class="era-calc__teaser-item">
+              <p class="era-calc__teaser-label">Annual ERA cost</p>
+              <p class="era-calc__teaser-value" id="era-teaser-cost">£—</p>
+            </div>
+            <div class="era-calc__teaser-item">
+              <p class="era-calc__teaser-label">IR35 risk</p>
+              <p class="era-calc__teaser-value" id="era-teaser-risk">—</p>
+            </div>
+            <div class="era-calc__teaser-item">
+              <p class="era-calc__teaser-label">Potential saving</p>
+              <p class="era-calc__teaser-value" id="era-teaser-saving">£—</p>
+            </div>
+          </div>
+
+          <!-- HubSpot embedded form drops here when configured.
+               Until a real form GUID is set, the fallback form below renders. -->
+          <div class="era-calc__hubspot-slot" id="era-hubspot-slot"></div>
+
+          <form class="era-calc__form" id="era-fallback-form" novalidate>
+            <div class="era-calc__form-row">
+              <div class="era-calc__field">
+                <label class="era-calc__label" for="era-firstname">First name</label>
+                <input type="text" id="era-firstname" required autocomplete="given-name">
+              </div>
+              <div class="era-calc__field">
+                <label class="era-calc__label" for="era-lastname">Last name</label>
+                <input type="text" id="era-lastname" required autocomplete="family-name">
+              </div>
+            </div>
+            <div class="era-calc__field">
+              <label class="era-calc__label" for="era-company">Company</label>
+              <input type="text" id="era-company" required autocomplete="organization">
+            </div>
+            <div class="era-calc__form-row">
+              <div class="era-calc__field">
+                <label class="era-calc__label" for="era-email">Work email</label>
+                <input type="email" id="era-email" required autocomplete="email">
+              </div>
+              <div class="era-calc__field">
+                <label class="era-calc__label" for="era-phone">Phone</label>
+                <input type="tel" id="era-phone" required autocomplete="tel">
+              </div>
+            </div>
+            <p class="era-calc__error" id="era-form-error">Please complete all fields with valid details.</p>
+            <div class="era-calc__actions" style="margin-top:6px">
+              <button type="button" class="era-calc__btn era-calc__btn--ghost" id="era-back-1">← Back</button>
+              <button type="submit" class="era-calc__btn era-calc__btn--primary" id="era-submit">Show my full results →</button>
+            </div>
+          </form>
+          <p class="era-calc__privacy">We respect your inbox. By submitting you agree to our <a href="https://optibpo.com/privacy-policy/" target="_blank" rel="noopener">privacy policy</a>. Unsubscribe any time.</p>
+        </div>
+      </section>
+
+      <!-- ===== STEP 3: RESULTS ===== -->
+      <section class="era-calc__panel" data-panel="3">
+        <div class="era-calc__results-grid">
+          <div class="era-calc__metric era-calc__metric--hero">
+            <p class="era-calc__metric-label">Estimated annual saving with optiBPO</p>
+            <p class="era-calc__metric-value" id="era-r-saving">£0</p>
+            <p class="era-calc__metric-foot">vs running the same headcount in-house under ERA 2025</p>
+          </div>
+          <div class="era-calc__metric">
+            <p class="era-calc__metric-label">Annual ERA compliance cost</p>
+            <p class="era-calc__metric-value" id="era-r-cost">£0</p>
+            <p class="era-calc__metric-foot">Admin, statutory rights, tribunal-risk reserve</p>
+          </div>
+          <div class="era-calc__metric">
+            <p class="era-calc__metric-label">IR35 risk</p>
+            <p class="era-calc__metric-value"><span class="era-calc__risk-badge" id="era-r-risk">—</span></p>
+            <p class="era-calc__metric-foot" id="era-r-risk-foot">Based on your role mix</p>
+          </div>
+          <div class="era-calc__metric">
+            <p class="era-calc__metric-label">optiBPO equivalent cost</p>
+            <p class="era-calc__metric-value" id="era-r-bpo">£0</p>
+            <p class="era-calc__metric-foot">Same headcount, fully managed</p>
+          </div>
+          <div class="era-calc__metric">
+            <p class="era-calc__metric-label">Payback period</p>
+            <p class="era-calc__metric-value" id="era-r-payback">— mo</p>
+            <p class="era-calc__metric-foot">One-off transition vs monthly saving</p>
+          </div>
+        </div>
+
+        <div class="era-calc__breakdown">
+          <h4>How we got there</h4>
+          <div class="era-calc__breakdown-row"><span>Headcount × salary × on-costs (22%)</span><span id="era-b-uk">£0</span></div>
+          <div class="era-calc__breakdown-row"><span>+ ERA 2025 compliance overhead</span><span id="era-b-era">£0</span></div>
+          <div class="era-calc__breakdown-row"><span>= Current annual UK cost</span><span id="era-b-total">£0</span></div>
+          <div class="era-calc__breakdown-row"><span>− optiBPO equivalent</span><span id="era-b-bpo">−£0</span></div>
+          <div class="era-calc__breakdown-row"><span>Annual saving</span><span id="era-b-save">£0</span></div>
+        </div>
+
+        <div class="era-calc__cta-card">
+          <h3 class="era-calc__cta-title">Talk to Kal — 30 minutes, no commitment.</h3>
+          <p class="era-calc__cta-sub">Get a tailored offshore plan and an honest read on whether ERA 2025 changes the maths for your business.</p>
+          <a href="#" class="era-calc__btn era-calc__btn--primary" id="era-calendly" target="_blank" rel="noopener">Book a discovery call →</a>
+        </div>
+
+        <p class="era-calc__footnote">
+          <strong>Sources &amp; assumptions:</strong> ERA 2025 compliance cost based on the
+          <a href="https://assets.publishing.service.gov.uk/media/695d3ebfbd1c076f787e7399/employment-rights-act-2025-economic-analysis.pdf" target="_blank" rel="noopener">DBT Economic Analysis (Jan 2026)</a>,
+          <a href="https://www.cipd.org/en/about/press-releases/cipd-urges-government-clarity-over-employment-rights-bill-needed-costs-rise/" target="_blank" rel="noopener">CIPD employer survey</a>, and
+          <a href="https://www.peoplemanagement.co.uk/article/1949065/increased-labour-costs-pushing-small-businesses-brink-fsb-warns" target="_blank" rel="noopener">FSB modelling</a>.
+          Salary bands from <a href="https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/bulletins/annualsurveyofhoursandearnings/2025" target="_blank" rel="noopener">ONS ASHE 2025</a>.
+          IR35 weighting follows HMRC CEST factors. optiBPO equivalent assumes 60% saving on fully-loaded UK FTE cost — your actual quote may differ.
+          This calculator is an estimate, not legal or tax advice.
+        </p>
+
+        <div class="era-calc__actions" style="margin-top:18px">
+          <button type="button" class="era-calc__btn era-calc__btn--ghost" id="era-restart">↺ Start over</button>
+          <span></span>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <!-- ============================================================
+       EMBEDDABLE WIDGET ENDS HERE
+       ============================================================ -->
+</div>
+
+<!-- HubSpot Forms embed loader.
+     The HubSpot Tracking Code on optibpo.com (portal 48942580) is loaded site-wide,
+     but the Forms embed needs forms/embed/v2.js separately. -->
+<script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js" async></script>
+
+<script>
+(function(){
+  'use strict';
+
+  // =========================================================================
+  // CONFIG — change these in one place.
+  // =========================================================================
+  var CONFIG = {
+    // HubSpot — portal ID is optiBPO's live one (sourced from optibpo.com tracker).
+    // Form GUID is a placeholder until Kal/marketing creates the real form in HubSpot.
+    hubspot: {
+      portalId: '48942580',
+      formId:   'REPLACE_WITH_REAL_FORM_GUID', // <-- swap in HubSpot form GUID
+      region:   'eu1'                          // adjust if HubSpot account is na1
+    },
+    // Stub Calendly link — replace with Kal's real booking URL before going live.
+    calendlyUrl: 'https://calendly.com/optibpo-kal/discovery-30min',
+
+    // Calculator constants — see /era-calculator/README in research notes for sources.
+    constants: {
+      BASE_COMPLIANCE_PER_EMPLOYEE: 200,        // £/yr — DBT IA central + FSB extrapolation
+      SSP_DAY_ONE_PER_EMPLOYEE: 15,             // £/yr — gov.uk SSP factsheet
+      SETUP: { '1-10': 1000, '11-50': 4000, '51-250': 14000 },
+      INDUSTRY_MULT: {
+        hospitality: 1.40, adult_social_care: 1.35, retail: 1.30,
+        construction: 1.20, manufacturing_logistics: 1.15,
+        professional_services: 1.00, tech: 1.00, other: 1.10
+      },
+      EMPLOYER_ON_COST_RATE: 0.22,              // employer NI + pension auto-enrol
+      OFFSHORE_RATE: 0.40,                      // optiBPO ≈ 40% of UK fully-loaded
+      IR35_WEIGHTS: {
+        contractor_single: 0.35,
+        zero_hours:        0.20,
+        fixed_term:        0.20,
+        agency:            0.15,
+        contractor_multi:  0.05,
+        part_time:         0.05,
+        permanent_ft:      0.00
+      }
+    }
+  };
+
+  // =========================================================================
+  // DOM HELPERS
+  // =========================================================================
+  var root = document.getElementById('era-calc-root');
+  if(!root){ return; }
+  function $(sel){ return root.querySelector(sel); }
+  function $$(sel){ return Array.prototype.slice.call(root.querySelectorAll(sel)); }
+  function gbp(n){
+    if(!isFinite(n)) return '£0';
+    var v = Math.round(n);
+    return '£' + v.toLocaleString('en-GB');
+  }
+
+  // =========================================================================
+  // STATE
+  // =========================================================================
+  var state = {
+    employees: 15,
+    salary: 42000,
+    industry: 'professional_services',
+    roles: { permanent_ft: true },
+    contact: null,
+    results: null
+  };
+
+  // =========================================================================
+  // CALCULATIONS
+  // =========================================================================
+  function setupBand(n){
+    if(n <= 10) return '1-10';
+    if(n <= 50) return '11-50';
+    return '51-250';
+  }
+
+  function calculateIR35(roles){
+    var w = CONFIG.constants.IR35_WEIGHTS;
+    var score = 0, count = 0;
+    for(var k in roles){
+      if(roles[k] && w.hasOwnProperty(k)){
+        score += w[k];
+        count++;
+      }
+    }
+    // Normalise — a workforce of only-permanent-FT scores 0; contractor-heavy mix climbs fast.
+    score = Math.min(1, score);
+    var level = 'low', label = 'Low';
+    if(score >= 0.6){ level = 'high'; label = 'High'; }
+    else if(score >= 0.3){ level = 'med'; label = 'Medium'; }
+    return { score: score, level: level, label: label };
+  }
+
+  function calculate(s){
+    var c = CONFIG.constants;
+    var industryMult = c.INDUSTRY_MULT[s.industry] || 1.0;
+
+    // ERA compliance — per-employee admin + statutory + risk reserve, scaled by industry.
+    var perEmployeeAnnual = (c.BASE_COMPLIANCE_PER_EMPLOYEE + c.SSP_DAY_ONE_PER_EMPLOYEE) * industryMult;
+    var eraAnnual = perEmployeeAnnual * s.employees;
+    var setupOneOff = c.SETUP[setupBand(s.employees)];
+
+    // UK fully-loaded staff cost.
+    var ukLoaded = s.salary * (1 + c.EMPLOYER_ON_COST_RATE) * s.employees;
+
+    // Offshore equivalent.
+    var bpoAnnual = ukLoaded * c.OFFSHORE_RATE;
+
+    // Saving = (UK staff + ERA) − offshore.
+    var currentTotal = ukLoaded + eraAnnual;
+    var saving = currentTotal - bpoAnnual;
+    var monthlySaving = saving / 12;
+    var paybackMonths = monthlySaving > 0 ? (setupOneOff / monthlySaving) : Infinity;
+
+    var ir35 = calculateIR35(s.roles);
+
+    return {
+      eraAnnual: eraAnnual,
+      setupOneOff: setupOneOff,
+      ukLoaded: ukLoaded,
+      bpoAnnual: bpoAnnual,
+      currentTotal: currentTotal,
+      saving: saving,
+      paybackMonths: paybackMonths,
+      ir35: ir35,
+      industryMult: industryMult
+    };
+  }
+
+  // =========================================================================
+  // STEP NAVIGATION
+  // =========================================================================
+  function showStep(n){
+    $$('.era-calc__panel').forEach(function(p){
+      p.classList.toggle('is-active', p.getAttribute('data-panel') === String(n));
+    });
+    $$('.era-calc__step').forEach(function(s){
+      var sn = parseInt(s.getAttribute('data-step'),10);
+      s.classList.toggle('is-active', sn === n);
+      s.classList.toggle('is-done', sn < n);
+    });
+    // Scroll widget into view on mobile transitions.
+    if(root.getBoundingClientRect().top < 0){
+      root.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+  }
+
+  // =========================================================================
+  // BIND INPUTS
+  // =========================================================================
+  var $emp = $('#era-employees');
+  var $empVal = $('#era-employees-value');
+  $emp.addEventListener('input', function(){
+    state.employees = parseInt($emp.value,10);
+    $empVal.textContent = state.employees;
+  });
+
+  $('#era-salary').addEventListener('change', function(e){
+    state.salary = parseInt(e.target.value,10);
+  });
+  $('#era-industry').addEventListener('change', function(e){
+    state.industry = e.target.value;
+  });
+
+  $$('#era-roles input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state.roles[cb.value] = cb.checked;
+      cb.closest('.era-calc__role').classList.toggle('is-checked', cb.checked);
+    });
+    if(cb.checked) cb.closest('.era-calc__role').classList.add('is-checked');
+  });
+
+  // =========================================================================
+  // STEP 1 → STEP 2 (compute teaser, show gate)
+  // =========================================================================
+  $('#era-to-gate').addEventListener('click', function(){
+    var anyRole = Object.keys(state.roles).some(function(k){ return state.roles[k]; });
+    var err = $('#era-roles-error');
+    if(!anyRole){ err.classList.add('is-shown'); return; }
+    err.classList.remove('is-shown');
+
+    state.results = calculate(state);
+
+    $('#era-teaser-cost').textContent   = gbp(state.results.eraAnnual);
+    $('#era-teaser-risk').textContent   = state.results.ir35.label;
+    $('#era-teaser-saving').textContent = gbp(state.results.saving);
+
+    // Try to mount HubSpot form if a real GUID is configured.
+    mountHubSpotForm();
+    showStep(2);
+  });
+
+  $('#era-back-1').addEventListener('click', function(){ showStep(1); });
+
+  // =========================================================================
+  // HUBSPOT FORM EMBED
+  // Mounts the live HubSpot form into the slot once the embed script is ready.
+  // Falls back to the inline form if the GUID is still the placeholder.
+  // =========================================================================
+  function mountHubSpotForm(){
+    var slot = $('#era-hubspot-slot');
+    var hs = CONFIG.hubspot;
+    if(!hs.formId || hs.formId === 'REPLACE_WITH_REAL_FORM_GUID'){
+      // Placeholder mode — leave fallback form visible.
+      return;
+    }
+    if(!window.hbspt || !window.hbspt.forms){
+      // Script not loaded yet — try again in 300ms.
+      setTimeout(mountHubSpotForm, 300);
+      return;
+    }
+    if(slot.getAttribute('data-mounted') === '1') return;
+    slot.setAttribute('data-mounted','1');
+    window.hbspt.forms.create({
+      portalId: hs.portalId,
+      formId:   hs.formId,
+      region:   hs.region,
+      target:   '#era-hubspot-slot',
+      onFormSubmitted: function($form, ctx){
+        // ctx.submissionValues has the form values keyed by HubSpot field name.
+        state.contact = ctx && ctx.submissionValues ? ctx.submissionValues : {};
+        revealResults();
+      }
+    });
+  }
+
+  // =========================================================================
+  // FALLBACK FORM (when HubSpot GUID not yet configured).
+  // Validates inline; submission is held client-side. Once the HubSpot form is
+  // wired this code path is skipped because the HubSpot iframe replaces the form.
+  // =========================================================================
+  $('#era-fallback-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var fn = $('#era-firstname').value.trim();
+    var ln = $('#era-lastname').value.trim();
+    var co = $('#era-company').value.trim();
+    var em = $('#era-email').value.trim();
+    var ph = $('#era-phone').value.trim();
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
+    var err = $('#era-form-error');
+
+    if(!fn || !ln || !co || !emailOk || !ph){
+      err.classList.add('is-shown'); return;
+    }
+    err.classList.remove('is-shown');
+
+    state.contact = { firstname: fn, lastname: ln, company: co, email: em, phone: ph };
+
+    // Best-effort post to HubSpot Forms API even without the embed.
+    // This works once the form GUID is set; until then it's a no-op.
+    submitToHubSpotApi(state.contact);
+    revealResults();
+  });
+
+  function submitToHubSpotApi(contact){
+    var hs = CONFIG.hubspot;
+    if(!hs.formId || hs.formId === 'REPLACE_WITH_REAL_FORM_GUID') return;
+    var url = 'https://api.hsforms.com/submissions/v3/integration/submit/' +
+              encodeURIComponent(hs.portalId) + '/' + encodeURIComponent(hs.formId);
+    var payload = {
+      fields: [
+        { name:'firstname', value: contact.firstname || '' },
+        { name:'lastname',  value: contact.lastname  || '' },
+        { name:'company',   value: contact.company   || '' },
+        { name:'email',     value: contact.email     || '' },
+        { name:'phone',     value: contact.phone     || '' },
+        { name:'era_calc_employees',     value: String(state.employees) },
+        { name:'era_calc_industry',      value: state.industry },
+        { name:'era_calc_annual_cost',   value: String(Math.round(state.results.eraAnnual)) },
+        { name:'era_calc_ir35_risk',     value: state.results.ir35.label },
+        { name:'era_calc_saving',        value: String(Math.round(state.results.saving)) }
+      ],
+      context: { pageUri: location.href, pageName: document.title }
+    };
+    try{
+      fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }).catch(function(){ /* swallow — we already showed results */ });
+    }catch(_){}
+  }
+
+  // =========================================================================
+  // REVEAL RESULTS
+  // =========================================================================
+  function revealResults(){
+    var r = state.results;
+
+    $('#era-r-cost').textContent    = gbp(r.eraAnnual);
+    $('#era-r-bpo').textContent     = gbp(r.bpoAnnual);
+    $('#era-r-saving').textContent  = gbp(r.saving);
+    $('#era-r-payback').textContent = isFinite(r.paybackMonths)
+      ? Math.max(1, Math.round(r.paybackMonths)) + ' mo'
+      : 'n/a';
+
+    var badge = $('#era-r-risk');
+    badge.textContent = r.ir35.label;
+    badge.className = 'era-calc__risk-badge era-calc__risk-badge--' + r.ir35.level;
+
+    $('#era-r-risk-foot').textContent =
+      r.ir35.level === 'high' ? 'Significant exposure — review your contractor engagements urgently.' :
+      r.ir35.level === 'med'  ? 'Moderate exposure — worth a structured review.' :
+                                'Limited exposure under current HMRC CEST factors.';
+
+    // Breakdown
+    $('#era-b-uk').textContent    = gbp(r.ukLoaded);
+    $('#era-b-era').textContent   = gbp(r.eraAnnual);
+    $('#era-b-total').textContent = gbp(r.currentTotal);
+    $('#era-b-bpo').textContent   = '−' + gbp(r.bpoAnnual);
+    $('#era-b-save').textContent  = gbp(r.saving);
+
+    // Calendly CTA
+    $('#era-calendly').setAttribute('href', CONFIG.calendlyUrl);
+
+    // Unblur any teaser values (in case the user navigates back/forward).
+    $$('.era-calc__teaser-value').forEach(function(el){ el.classList.add('is-shown'); });
+
+    showStep(3);
+  }
+
+  $('#era-restart').addEventListener('click', function(){
+    $$('.era-calc__teaser-value').forEach(function(el){ el.classList.remove('is-shown'); });
+    showStep(1);
+  });
+
+  // =========================================================================
+  // EXPOSE A TINY API — so an embedder can override config from the page.
+  // Example on optibpo.com:
+  //   window.eraCalc.config({ hubspot:{ formId:'abc-123' }, calendlyUrl:'...' });
+  // =========================================================================
+  window.eraCalc = {
+    config: function(overrides){
+      if(!overrides) return;
+      if(overrides.hubspot){
+        for(var k in overrides.hubspot) CONFIG.hubspot[k] = overrides.hubspot[k];
+      }
+      if(overrides.calendlyUrl) CONFIG.calendlyUrl = overrides.calendlyUrl;
+    },
+    version: root.getAttribute('data-version')
+  };
+
+})();
+</script>
+
+</body>
+</html>
