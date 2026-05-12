@@ -1,0 +1,23 @@
+{
+  "name": "optibpo-era-calculator",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Employment Rights Act 2025 cost calculator for UK SMEs — embeddable widget for optibpo.com.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
