@@ -1,6 +1,6 @@
 # Optibpo ERA Calculator
 
-Next.js (App Router, TypeScript) rewrite of the Employment Rights Act 2025 cost calculator. Free, embeddable widget for **optibpo.com**.
+Free Employment Rights Act 2025 cost calculator for UK SMEs — embeddable widget for **optibpo.com**.
 
 UK SME owners enter their business details and get back:
 
@@ -12,82 +12,43 @@ UK SME owners enter their business details and get back:
 Lead capture (HubSpot) gates the full results; CTA links to Kal's Calendly.
 
 **Live:** https://leew-cs.github.io/Optibpo-ERA-Calculator/
-**Embed:** https://leew-cs.github.io/Optibpo-ERA-Calculator/embed/
 
-## Local development
-
-```bash
-npm install
-npm run dev          # http://localhost:3000
-npm run build        # static export to ./out/
-```
-
-Requires Node 20+.
-
-## Project layout
+## Layout
 
 ```
-src/
-├── app/
-│   ├── layout.tsx          # root layout, fonts, HubSpot loader
-│   ├── page.tsx            # standalone preview page
-│   ├── globals.css         # page chrome only (widget is module-scoped)
-│   └── embed/
-│       ├── page.tsx        # iframe-friendly route (no header chrome)
-│       └── EmbedBodyMark.tsx
-├── components/
-│   └── EraCalculator.tsx   # the widget
-├── lib/
-│   ├── calculations.ts     # constants + pure calc functions
-│   └── config.ts           # HubSpot + Calendly stubs (swap before going live)
-└── styles/
-    └── era-calc.module.css # CSS module — fully scoped
+.
+├── index.html        ← the deployed widget (single self-contained file)
+├── nextjs/           ← parallel Next.js rewrite (development only, not deployed)
+└── README.md
 ```
+
+**The deployed artefact is `index.html` at the repo root.** GitHub Pages serves it directly from `main` / root — no build step, no workflow. Same pattern as `AIPolicyBuilder` and `mystaff-rrp`.
+
+The `nextjs/` subfolder is a parallel TypeScript / App Router rewrite kept for future use; it isn't built or deployed automatically. To swap deployments later, build it (`npm run build` produces `out/`) and point Pages at that output via a workflow.
 
 ## Embedding on optibpo.com
 
-Paste this into a WordPress Custom HTML block:
+Paste the `<div class="era-calc">…</div>` block from `index.html`, plus the matching `<style>` and `<script>` blocks, into a WordPress Custom HTML block. All CSS is scoped to `.era-calc`.
 
-```html
-<iframe
-  id="era-calc-frame"
-  src="https://leew-cs.github.io/Optibpo-ERA-Calculator/embed/"
-  style="width:100%;border:0;display:block"
-  scrolling="no"
-></iframe>
-<script>
-  window.addEventListener('message', function (e) {
-    if (e && e.data && e.data.type === 'era-calc:height') {
-      var f = document.getElementById('era-calc-frame');
-      if (f) f.style.height = e.data.height + 'px';
-    }
-  });
-</script>
-```
-
-The iframe self-reports its content height after every state change, so the host page resizes the frame automatically — no scrollbars inside the widget.
-
-## Stubs to replace before going live
-
-| Stub | Where | Replace with |
-|---|---|---|
-| `REPLACE_WITH_REAL_FORM_GUID` | `src/lib/config.ts` → `HUBSPOT.formId` | The form GUID from HubSpot once Kal/marketing creates the lead form |
-| `https://calendly.com/optibpo-kal/discovery-30min` | `src/lib/config.ts` → `CALENDLY_URL` | Kal's actual Calendly URL |
-
-HubSpot Portal ID `48942580` is correct (sourced from optibpo.com's existing tracker). Until the form GUID is set, the widget falls back to an inline form which posts client-side via the HubSpot Forms API once the GUID is configured. The inline form is also handy for prototype demos.
-
-### Override config from the host page
+Override config from the host page without editing the widget:
 
 ```html
 <script>
-  // After the iframe loads — useful if you want to swap config without rebuilding.
-  // Note: this only works for the standalone page or a same-origin embed.
   window.eraCalc.config({
     hubspot:    { formId: 'YOUR-REAL-FORM-GUID', region: 'eu1' },
     calendlyUrl:'https://calendly.com/kal-real-link/discovery'
   });
 </script>
 ```
+
+## Stubs to replace before going live
+
+| Stub | Where (in `index.html`) | Replace with |
+|---|---|---|
+| `REPLACE_WITH_REAL_FORM_GUID` | `CONFIG.hubspot.formId` | The form GUID from HubSpot once Kal/marketing creates the lead form |
+| `https://calendly.com/optibpo-kal/discovery-30min` | `CONFIG.calendlyUrl` | Kal's actual Calendly URL |
+
+HubSpot Portal ID `48942580` is correct (sourced from optibpo.com's existing tracker). Until the form GUID is set, the widget falls back to an inline form that posts client-side via the HubSpot Forms API — handy for prototype demos.
 
 ## Calculation sources
 
@@ -101,21 +62,16 @@ HubSpot Portal ID `48942580` is correct (sourced from optibpo.com's existing tra
 | Salary bands | ONS ASHE 2025 (median £39,039) | [ONS ASHE 2025](https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/bulletins/annualsurveyofhoursandearnings/2025) |
 | IR35 weights | HMRC CEST factors | HMRC, Qdos, ContractorCalculator |
 
-## Deployment
-
-`main` → GitHub Actions (`.github/workflows/deploy.yml`) → static export → GitHub Pages.
-
-**One-time setup:** in repo Settings → Pages → Source must be set to **"GitHub Actions"** (not "Deploy from a branch"). After that every push to `main` auto-deploys in ~90s.
-
 ## Versioning
 
-`APP_VERSION` is in `src/lib/config.ts`. Bump on every meaningful edit.
+Version lives on the root `<div data-version="…">` in `index.html`. Bump on every meaningful edit.
 
-Current: **2.0.0** — Next.js rewrite.
+Current: **1.0.2**
 
 ### Changelog
 
-- **2.0.0** — Next.js 15 / App Router / TypeScript rewrite. Iframe-friendly `/embed/` route. Self-reporting height via `postMessage`. CSS modules.
-- **1.0.1** — Initial vanilla-JS prototype.
+- **1.0.2** — Restructured repo to match the AIPolicyBuilder pattern: static `index.html` at root (deployed), Next.js rewrite moved to `nextjs/` subfolder (not deployed).
+- **1.0.1** — Initial standalone repo. Live on GitHub Pages.
+- **1.0.0** — First working prototype.
 
-Historical vanilla-JS build preserved in [`legacy/index.html`](legacy/index.html) for reference.
+The Next.js rewrite (v2.0.0 of the underlying code) lives in [`nextjs/`](nextjs/) and has its own [README](nextjs/README.md).

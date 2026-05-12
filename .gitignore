@@ -1,33 +1,17 @@
-# dependencies
-node_modules/
-.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# next
-.next/
-out/
-
-# build artefacts
-build/
-dist/
-
-# env
-.env*.local
-.env
-
-# logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.log
-
-# editor / OS
+# OS / editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 .claude/
 
-# typescript
-*.tsbuildinfo
+# Node (in case anyone runs npm at the root by mistake)
+node_modules/
+
+# Next.js build artifacts (the real ones are inside nextjs/ but pin here too)
+/nextjs/.next/
+/nextjs/out/
+/nextjs/node_modules/
+
+# Logs
+*.log
